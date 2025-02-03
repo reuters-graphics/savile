@@ -12,6 +12,9 @@ import mock from 'mock-fs';
 import path from 'path';
 import { confirm, select, text } from '@clack/prompts';
 import * as fs from 'fs';
+import * as url from 'url';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 vi.mock('@clack/prompts', async (importOriginal) => {
   const mod = (await importOriginal()) as object;
@@ -34,7 +37,7 @@ beforeEach(() => {
             'one.png': mock.load(
               path.resolve(__dirname, './test/oversize.png')
             ),
-            'two.JPEG': mock.load(
+            'two.jpeg': mock.load(
               path.resolve(__dirname, './test/oversize.jpg')
             ),
           },

@@ -3,6 +3,9 @@ import { describe, it, beforeEach, afterEach, expect } from 'vitest';
 import mockFs from 'mock-fs';
 import path from 'path';
 import fs from 'fs';
+import * as url from 'url';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 import { Image } from './image';
 

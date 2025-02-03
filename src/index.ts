@@ -46,6 +46,7 @@ export class Savile {
     const imageFiles = glob.sync('**/*.{png,jpg,jpeg,webp,avif}', {
       cwd: this.rootDir,
       absolute: true,
+      nocase: true,
     });
     this.images = imageFiles.map((imgPath) => new Image(imgPath, this.rootDir));
     await sleep(750);

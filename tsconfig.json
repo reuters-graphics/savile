@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "outDir": "dist",
     "declarationDir": "dist",
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"]
   },
   "typedocOptions": {
     "entryPoints": ["src/index.ts"],
