@@ -3,11 +3,23 @@
   "version": "0.0.0",
   "description": "",
   "type": "module",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "savile": "./dist/cli.js"
+  },
   "packageManager": "pnpm@9.13.2",
+  "files": [
+    "dist/**/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "build": "rollup --config rollup.config.js",
+    "build": "rollup --config rollup.config.js && publint",
     "build:docs": "typedoc",
+    "docs:preview": "live-server ./docs",
     "lint": "eslint --fix",
     "format": "prettier . --write",
     "changeset:version": "changeset version",
@@ -16,7 +28,13 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "repository": "github:reuters-graphics/savile",
+  "private": false,
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
     "@reuters-graphics/yaks-eslint": "^0.1.0",
@@ -31,8 +49,10 @@
     "@types/node": "^22.12.0",
     "@types/update-notifier": "^6.0.8",
     "eslint": "^9.19.0",
+    "live-server": "^1.2.2",
     "mock-fs": "^5.4.1",
     "prettier": "^3.4.2",
+    "publint": "^0.3.2",
     "rollup": "^4.34.1",
     "rollup-plugin-node-externals": "^8.0.0",
     "typedoc": "^0.27.6",
@@ -41,10 +61,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
-    "@reuters-graphics/graphics-bin": "^1.1.2",
-    "cli-progress": "^3.12.0",
     "dedent": "^1.5.3",
-    "fs-extra": "^11.3.0",
     "glob": "^11.0.1",
     "image-size": "^1.2.0",
     "micromatch": "^4.0.8",

@@ -2,6 +2,7 @@
   "extends": "@reuters-graphics/yaks-ts/base",
   "include": ["src/**/*.ts"],
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "dist",
     "declarationDir": "dist",
     "typeRoots": ["./node_modules/@types"],

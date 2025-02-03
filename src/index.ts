@@ -17,22 +17,33 @@ import micromatch from 'micromatch';
 import dedent from 'dedent';
 
 export class Savile {
-  public cwd: string;
+  private cwd: string;
   /**
-   * Absolute path to images directory.
+   * Absolute or relative path to images directory.
    */
-  public rootDir: string;
-  images?: Image[];
-  constructor(rootDir: string) {
+  private rootDir: string;
+  private images?: Image[];
+  constructor(
+    /**
+     * Absolute or relative path to your images directory.
+     */
+    rootDir: string
+  ) {
     this.cwd = process.cwd();
     this.rootDir =
       path.isAbsolute(rootDir) ? rootDir : path.join(this.cwd, rootDir);
   }
 
+  /**
+   * Find images in your images root directory.
+   *
+   * Looks for `.png`, `.jpg`,`.jpeg`,`.webp` and `.avif` files in the
+   * images root directory and all sub-directories.
+   */
   async findImages() {
     const s = spinner();
     s.start(`Finding images in ${path.relative(this.cwd, this.rootDir)}`);
-    const imageFiles = glob.sync('**/*.{png,jpg,jpeg,webp}', {
+    const imageFiles = glob.sync('**/*.{png,jpg,jpeg,webp,avif}', {
       cwd: this.rootDir,
       absolute: true,
     });
@@ -42,7 +53,7 @@ export class Savile {
     await this.measureImages();
   }
 
-  async measureImages() {
+  private async measureImages() {
     const { images } = this;
     if (!images) throw Error;
 
@@ -52,6 +63,9 @@ export class Savile {
     return this.images!;
   }
 
+  /**
+   * Log images in buckets by file size.
+   */
   async logImageFileSize() {
     const { images } = this;
     if (!images) throw Error;
@@ -77,6 +91,9 @@ export class Savile {
     );
   }
 
+  /**
+   * Log images in buckets by pixel width.
+   */
   async logImageWidth() {
     const { images } = this;
     if (!images) throw Error;
@@ -102,7 +119,7 @@ export class Savile {
     );
   }
 
-  matchImagesByQuery(query: string) {
+  private matchImagesByQuery(query: string) {
     const { images } = this;
     if (!images) throw Error;
     return images.filter((i) =>
@@ -110,13 +127,13 @@ export class Savile {
     );
   }
 
-  matchImagesByWidth(width: number) {
+  private matchImagesByWidth(width: number) {
     const { images } = this;
     if (!images) throw Error;
     return images.filter((i) => i.stats!.width > width);
   }
 
-  async queryImages() {
+  private async queryImages() {
     note(
       dedent`By filename:
       - ${colour.cyan('myPhoto.jpg')}
@@ -151,7 +168,7 @@ export class Savile {
     return this.matchImagesByQuery(query);
   }
 
-  async resizeByMaxWidth() {
+  private async resizeByMaxWidth() {
     const value = await text({
       message: "What's the max pixel width you want to resize your images to?",
       placeholder: '1200',
@@ -198,7 +215,7 @@ export class Savile {
     return imagesToResize;
   }
 
-  async resizeByQuery() {
+  private async resizeByQuery() {
     const imagesToResize = await this.queryImages();
 
     const log = imagesToResize
@@ -243,6 +260,21 @@ export class Savile {
     return imagesToResize;
   }
 
+  /**
+   * Resize images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile resize <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile resize ./src/statics/images
+   * ```
+   */
   async resize() {
     await this.logImageWidth();
 
@@ -269,6 +301,21 @@ export class Savile {
     if (mode === 'query') return this.resizeByQuery();
   }
 
+  /**
+   * Optimise images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile optimise <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile optimise ./src/statics/images
+   * ```
+   */
   async optimise() {
     const imagesToOptimise = await this.queryImages();
 
@@ -316,6 +363,21 @@ export class Savile {
     return imagesToOptimise;
   }
 
+  /**
+   * Reformat images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile resize <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile row ./src/statics/images
+   * ```
+   */
   async reformat() {
     const imagesToReformat = await this.queryImages();
 
@@ -363,7 +425,7 @@ export class Savile {
     return imagesToReformat;
   }
 
-  async progresiviseAll() {
+  private async progresiviseAll() {
     const imagesToProgressivise = this.matchImagesByQuery('*.{jpg,jpeg}');
 
     if (imagesToProgressivise.length === 0) {
@@ -396,7 +458,7 @@ export class Savile {
     return imagesToProgressivise;
   }
 
-  async progresiviseByQuery(): Promise<Image[]> {
+  private async progresiviseByQuery(): Promise<Image[]> {
     const imagesToProgressivise = (await this.queryImages()).filter((i) =>
       micromatch.isMatch(path.basename(i.path), '*.{jpg,jpeg}', {
         nocase: true,
@@ -433,6 +495,9 @@ export class Savile {
     return imagesToProgressivise;
   }
 
+  /**
+   * Convert JPEGs files in your directory to progressive images,
+   */
   async progressivise() {
     const mode = await select({
       message: 'How do you want to select which JPEGs to make progressive',
@@ -457,6 +522,21 @@ export class Savile {
     if (mode === 'query') return this.progresiviseByQuery();
   }
 
+  /**
+   * Resize, optimise or reformat images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile row <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile row ./src/statics/images
+   * ```
+   */
   async row() {
     this.logImageFileSize();
 

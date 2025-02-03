@@ -62,8 +62,11 @@ describe('Savile', () => {
     const savile = new Savile(path.join(process.cwd(), 'images'));
 
     await savile.findImages();
+    // @ts-ignore OK private
     expect(savile.images!.length).toBe(6);
+    // @ts-ignore OK private
     expect(savile.images!.filter((i) => i.stats!.size > 500).length).toBe(3);
+    // @ts-ignore OK private
     expect(savile.images!.filter((i) => i.stats!.size <= 250).length).toBe(3);
   });
 
@@ -84,18 +87,26 @@ describe('Savile', () => {
 
     await savile.findImages();
     // File extension match
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('*.jpg').length).toBe(2);
     // Case-insensitive
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('*.jpeg').length).toBe(1);
     // Brace match
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('*.{jpg,jpeg}').length).toBe(3);
     // Directory match
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('sub/*').length).toBe(2);
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('sub2/*').length).toBe(2);
     // Partial filename match
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('thingy-*.jpg').length).toBe(1);
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('thingy-*.*').length).toBe(2);
     // Basename match
+    // @ts-ignore OK private
     expect(savile.matchImagesByQuery('one.png').length).toBe(2);
   });
 
@@ -103,7 +114,9 @@ describe('Savile', () => {
     const savile = new Savile('images');
 
     await savile.findImages();
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(3);
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(1000).length).toBe(6);
   });
 
@@ -111,8 +124,10 @@ describe('Savile', () => {
     const savile = new Savile('images');
     await savile.findImages();
     (text as Mock).mockResolvedValueOnce('*jpeg');
+    // @ts-ignore OK private
     expect((await savile.queryImages()).length).toBe(1);
     (text as Mock).mockResolvedValueOnce('thingy-*.*');
+    // @ts-ignore OK private
     expect((await savile.queryImages()).length).toBe(2);
   });
 
@@ -121,7 +136,9 @@ describe('Savile', () => {
     await savile.findImages();
     (text as Mock).mockResolvedValueOnce('1999');
     (confirm as Mock).mockResolvedValueOnce(true);
+    // @ts-ignore OK private
     expect((await savile.resizeByMaxWidth()).length).toBe(3);
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
 
@@ -131,9 +148,11 @@ describe('Savile', () => {
     (text as Mock).mockResolvedValueOnce('*.{jpg,jpeg}');
     (text as Mock).mockResolvedValueOnce('600');
     (confirm as Mock).mockResolvedValueOnce(true);
+    // @ts-ignore OK private
     const resized = await savile.resizeByQuery();
     expect(resized.length).toBe(3);
     expect(resized.every((i) => i.stats!.width === 600)).toBe(true);
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
 
@@ -147,6 +166,7 @@ describe('Savile', () => {
     const resized = (await savile.resize())!;
     expect(resized.length).toBe(3);
     expect(resized.every((i) => i.stats!.width === 600)).toBe(true);
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
 
@@ -159,18 +179,21 @@ describe('Savile', () => {
     const resized = (await savile.resize())!;
     expect(resized.length).toBe(3);
     expect(resized.every((i) => i.stats!.width === 1999)).toBe(true);
+    // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
 
   it('should optimise', async () => {
     const savile = new Savile('images');
     await savile.findImages();
+    // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
     (text as Mock).mockResolvedValueOnce('thingy-one.jpg');
     (text as Mock).mockResolvedValueOnce('80');
     (confirm as Mock).mockResolvedValueOnce(true);
     await savile.optimise();
+    // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const newSize = newImg.stats!.size;
     expect(ogSize).toBeGreaterThan(newSize);
@@ -179,6 +202,7 @@ describe('Savile', () => {
   it('should reformat', async () => {
     const savile = new Savile('images');
     await savile.findImages();
+    // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
     expect(ogSize).toBeGreaterThan(0);
@@ -188,6 +212,7 @@ describe('Savile', () => {
     await savile.reformat();
     expect(fs.existsSync('images/sub2/thingy-one.jpg')).toBe(false);
     expect(fs.existsSync('images/sub2/thingy-one.webp')).toBe(true);
+    // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.webp')[0];
     expect(newImg).toBeTruthy();
     const newSize = newImg.stats!.size;
@@ -197,13 +222,16 @@ describe('Savile', () => {
   it('should progressivise by query', async () => {
     const savile = new Savile('images');
     await savile.findImages();
+    // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
     (text as Mock).mockResolvedValueOnce('thingy-one.jpg');
     (confirm as Mock).mockResolvedValueOnce(true);
 
+    // @ts-ignore OK private
     await savile.progresiviseByQuery();
 
+    // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     expect(ogSize).toBeGreaterThan(newImg.stats!.size);
   });
@@ -211,12 +239,15 @@ describe('Savile', () => {
   it('should progressivise by query', async () => {
     const savile = new Savile('images');
     await savile.findImages();
+    // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
     (confirm as Mock).mockResolvedValueOnce(true);
 
+    // @ts-ignore OK private
     await savile.progresiviseAll();
 
+    // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     expect(ogSize).toBeGreaterThan(newImg.stats!.size);
   });

@@ -2,4 +2,6 @@
 
 ![](./logo.png)
 
-Tailor images down to the perfect fit.
+Tailors your images for the perfect web fit.
+
+[Read the docs.](https://reuters-graphics.github.io/savile/)
