@@ -1,0 +1,19 @@
+{
+  "extends": "@reuters-graphics/yaks-ts/base",
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "declarationDir": "dist",
+    "typeRoots": ["./node_modules/@types"],
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "docs",
+    "titleLink": "https://reuters-graphics.github.io/savile/",
+    "navigationLinks": {
+      "GitHub": "https://github.com/reuters-graphics/savile/",
+      "npm": "https://www.npmjs.com/package/@reuters-graphics/savile/"
+    },
+    "readme": "HOME.md"
+  }
+}
