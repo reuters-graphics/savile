@@ -37,7 +37,7 @@ beforeEach(() => {
             'one.png': mock.load(
               path.resolve(__dirname, './test/oversize.png')
             ),
-            'two.JPEG': mock.load(
+            'two.jpeg': mock.load(
               path.resolve(__dirname, './test/oversize.jpg')
             ),
           },
