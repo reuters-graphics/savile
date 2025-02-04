@@ -18,7 +18,9 @@ const S_CONNECT_LEFT = s('├', '+');
 const S_CORNER_BOTTOM_RIGHT = s('╯', '+');
 
 export const intro = (title = '') => {
-  process.stdout.write(`${color.gray(S_BAR_START)}  ${color.bgCyan(title)}\n`);
+  process.stdout.write(
+    `${color.gray(S_BAR_START)}  ${color.bgCyan(` ${title} `)}\n`
+  );
 };
 
 export const note = (message = '', title = '') => {

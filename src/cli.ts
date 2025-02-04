@@ -16,7 +16,7 @@ prog
   .describe('Resize, reformat or optimise images in a directoy.')
   .example('row ./src/statics/images')
   .action(async (imagesDir: string) => {
-    intro(`savile`);
+    intro(`Savile`);
     log.info('Tailors your images for the perfect web fit.');
     const savile = new Savile(imagesDir);
     await savile.findImages();
@@ -29,7 +29,7 @@ prog
   .describe('Resize images in a directoy.')
   .example('resize ./src/statics/images')
   .action(async (imagesDir: string) => {
-    intro(`savile`);
+    intro(`Savile`);
     log.info('Tailors your images for the perfect web fit.');
     const savile = new Savile(imagesDir);
     await savile.findImages();
@@ -42,7 +42,7 @@ prog
   .describe('Optimise images in a directoy.')
   .example('optimise ./src/statics/images')
   .action(async (imagesDir: string) => {
-    intro(`savile`);
+    intro(`Savile`);
     log.info('Tailors your images for the perfect web fit.');
     const savile = new Savile(imagesDir);
     await savile.findImages();
@@ -55,7 +55,7 @@ prog
   .describe('Reformat images in a directoy.')
   .example('reformat ./src/statics/images')
   .action(async (imagesDir: string) => {
-    intro(`savile`);
+    intro(`Savile`);
     log.info('Tailors your images for the perfect web fit.');
     const savile = new Savile(imagesDir);
     await savile.findImages();
