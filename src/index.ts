@@ -243,8 +243,18 @@ export class Savile {
 
     const width = parseInt(value);
 
+    const imagesWiderThanMax = imagesToResize.filter(
+      (i) => i.stats!.width > width
+    );
+
+    const log2 = imagesWiderThanMax
+      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.width}px)`)}`)
+      .join('\n');
+
+    note(log2, `Wider than ${width}px`);
+
     const confirmed = await confirm({
-      message: `OK, we'll resize these ${imagesToResize.length} images to ${width}px width. Proceed?`,
+      message: `OK, ${imagesWiderThanMax.length} images are wider than ${width}px. Resize them now?`,
     });
 
     if (isCancel(confirmed) || !confirmed) {
@@ -253,12 +263,12 @@ export class Savile {
     }
 
     const loop = spinLoop('Resizing images');
-    await loop(imagesToResize, async (image) => {
+    await loop(imagesWiderThanMax, async (image) => {
       image.resize(width);
       await image.overwriteImg();
     });
 
-    return imagesToResize;
+    return imagesWiderThanMax;
   }
 
   /**
