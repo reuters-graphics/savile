@@ -1,5 +1,11 @@
 # @reuters-graphics/savile
 
+## 0.0.4
+
+### Patch Changes
+
+- 22ffe5d: Better messaging for max width resize
+
 ## 0.0.3
 
 ### Patch Changes
