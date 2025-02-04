@@ -6,7 +6,6 @@ import {
   isCancel,
   cancel,
   confirm,
-  note,
   text,
   log,
 } from '@clack/prompts';
@@ -15,6 +14,7 @@ import colour from 'picocolors';
 import { sleep, spinLoop } from './utils';
 import micromatch from 'micromatch';
 import dedent from 'dedent';
+import { note } from './clack';
 
 export class Savile {
   private cwd: string;
