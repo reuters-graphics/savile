@@ -1,5 +1,6 @@
 import sade from 'sade';
-import { intro, outro, log } from '@clack/prompts';
+import { outro, log } from '@clack/prompts';
+import { intro } from './clack';
 import { name, version } from '../package.json';
 import updateNotifier from 'update-notifier';
 import { Savile } from '.';

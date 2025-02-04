@@ -7,6 +7,9 @@ settings:
 importers:
   .:
     dependencies:
+      '@clack/core':
+        specifier: ^0.4.1
+        version: 0.4.1
       '@clack/prompts':
         specifier: ^0.9.1
         version: 0.9.1
@@ -19,6 +22,9 @@ importers:
       image-size:
         specifier: ^1.2.0
         version: 1.2.0
+      is-unicode-supported:
+        specifier: ^2.1.0
+        version: 2.1.0
       micromatch:
         specifier: ^4.0.8
         version: 4.0.8
@@ -2816,6 +2822,13 @@ packages:
         integrity: sha512-2AT6j+gXe/1ueqbW6fLZJiIw3F8iXGJtt0yDrZaBhAZEG1raiTxKWU+IPqMCzQAXOUCKdA4UDMgacKH25XG2Cw==,
       }
     engines: { node: '>=4' }
+
+  is-unicode-supported@2.1.0:
+    resolution:
+      {
+        integrity: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==,
+      }
+    engines: { node: '>=18' }
 
   is-windows@1.0.2:
     resolution:
@@ -6265,6 +6278,8 @@ snapshots:
   is-subdir@1.2.0:
     dependencies:
       better-path-resolve: 1.0.0
+
+  is-unicode-supported@2.1.0: {}
 
   is-windows@1.0.2: {}
 
