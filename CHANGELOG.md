@@ -1,5 +1,11 @@
 # @reuters-graphics/savile
 
+## 0.0.3
+
+### Patch Changes
+
+- 6bba8e4: Minor styling
+
 ## 0.0.2
 
 ### Patch Changes
