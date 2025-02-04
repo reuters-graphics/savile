@@ -1,5 +1,11 @@
 # @reuters-graphics/savile
 
+## 0.0.2
+
+### Patch Changes
+
+- 550842a: Adds custom intro and note styling
+
 ## 0.0.1
 
 ### Patch Changes
