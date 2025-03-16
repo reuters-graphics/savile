@@ -24,6 +24,7 @@ import Water from './imgs/water.jpg?inline';
 
 function XtermWebContainer() {
   const terminalContainerRef = useRef(null);
+  const iframeRef = useRef(null);
 
   useEffect(() => {
     let terminalInstance: Terminal, processWriter: WritableStreamDefaultWriter<string>, webcontainerInstance: WebContainer;
@@ -123,6 +124,7 @@ function XtermWebContainer() {
         className="xterm-container"
         ref={terminalContainerRef}
       />
+      
     </div>
   );
 }
