@@ -1,0 +1,10 @@
+.hero {
+  padding: 0 0 2rem;
+}
+
+.hero img {
+  max-width: 150px;
+}
+.hero .tagline {
+  line-height: 1.25;
+}
