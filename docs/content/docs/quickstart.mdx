@@ -1,0 +1,48 @@
+---
+title: Quickstart
+sidebar:
+  order: 1
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Install
+
+<Tabs>
+  <TabItem label="pnpm" icon="pnpm">
+    ```console
+    pnpm add --save-dev @reuters-graphics/savile
+    ```
+  </TabItem>
+  <TabItem  label="npm" icon="seti:npm">
+    ```console
+    npm install --save-dev @reuters-graphics/savile
+    ```
+  </TabItem>
+</Tabs>
+
+
+## Use
+
+Pass a directory where Savile should look for oversize images.
+
+<Tabs>
+  <TabItem label="CLI" icon="laptop">
+    ```console
+    savile row ./src/statics/images
+    ```
+  </TabItem>
+  <TabItem  label="Module" icon="seti:javascript">
+    ```typescript
+    import { Savile } from '@reuters-graphics/savile';
+
+    const savile = new Savile('./src/statics/images');
+
+    await savile.findImages();
+
+    await savile.row();
+    ```
+  </TabItem>
+</Tabs>
+
+
