@@ -26,9 +26,6 @@ export default defineConfig({
         replacesTitle: true,
       },
       customCss: ['./docs/styles/custom.css'],
-      editLink: {
-        baseUrl: 'https://github.com/reuters-graphics/savile/edit/main/',
-      },
       favicon:
         'https://graphics.thomsonreuters.com/style-assets/images/logos/favicon/favicon.ico',
       social: {
