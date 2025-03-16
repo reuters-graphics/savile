@@ -178,3 +178,4 @@ dist
 
 dist/
 .astro/
+.vercel/
