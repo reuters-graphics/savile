@@ -18,9 +18,7 @@
   },
   "scripts": {
     "build": "rollup --config rollup.config.js && publint",
-    "build:docs": "astro build",
     "docs:dev": "astro dev",
-    "docs:preview": "live-server ./docs",
     "lint": "eslint --fix",
     "format": "prettier . --write",
     "changeset:version": "changeset version",

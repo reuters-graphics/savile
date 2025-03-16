@@ -4,4 +4,4 @@
 
 Tailors your images for the perfect web fit.
 
-[Read the docs.](https://reuters-graphics.github.io/savile/)
+[Read the docs.](https://savile.vercel.app/)
