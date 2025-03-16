@@ -56,13 +56,19 @@ function XtermWebContainer() {
       fitAddon.fit();
 
       terminalInstance.open(terminalContainerRef.current);
-      terminalInstance.writeln('👋 Loading demo ...');
-
-      auth.init({
-        clientId: 'wc_api_hobbes7878_7f1676eb6d6a9692c520391c5c3ac744',
-        scope: '',
-      });
+      terminalInstance.write('👋 Loading demo.');
       
+      const loadingInterval = setInterval(() => {
+        terminalInstance.write('.');
+      }, 1000);
+
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        auth.init({
+          clientId: 'wc_api_hobbes7878_7f1676eb6d6a9692c520391c5c3ac744',
+          scope: '',
+        });
+      }
+        
       webcontainerInstance = await WebContainer.boot();
     
       const virtualFs = await getVirtualFs();
@@ -94,8 +100,11 @@ function XtermWebContainer() {
       const installProc = await webcontainerInstance.spawn('npm', ['install']);
       await installProc.exit;
 
-      terminalInstance.focus();
+      clearInterval(loadingInterval);
       terminalInstance.clear();
+      terminalInstance.writeln('');
+      terminalInstance.writeln('');
+      terminalInstance.focus();
 
       const cmdProc = await webcontainerInstance.spawn('node', ['index.js']);
     
