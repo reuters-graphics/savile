@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { WebContainer } from '@webcontainer/api';
+import { WebContainer, auth } from '@webcontainer/api';
 import { fetchImage, fetchPlaceholderImage, createImage } from './images';
 
 import '@xterm/xterm/css/xterm.css';
@@ -57,7 +57,12 @@ function XtermWebContainer() {
 
       terminalInstance.open(terminalContainerRef.current);
       terminalInstance.writeln('👋 Loading demo ...');
-    
+
+      auth.init({
+        clientId: 'wc_api_hobbes7878_7f1676eb6d6a9692c520391c5c3ac744',
+        scope: '',
+      });
+      
       webcontainerInstance = await WebContainer.boot();
     
       const virtualFs = await getVirtualFs();
