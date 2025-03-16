@@ -6,8 +6,7 @@ import vercel from '@astrojs/vercel';
 export default defineConfig({
   outDir: './dist',
   srcDir: './docs',
-  site: 'https://reuters-graphics.github.io',
-  base: 'savile',
+  site: 'https://savile.vercel.app/',
   trailingSlash: 'always',
   output: 'server',
   adapter: vercel(),
