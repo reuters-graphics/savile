@@ -27,7 +27,9 @@ function XtermWebContainer() {
   const iframeRef = useRef(null);
 
   useEffect(() => {
-    let terminalInstance: Terminal, processWriter: WritableStreamDefaultWriter<string>, webcontainerInstance: WebContainer;
+    let terminalInstance: Terminal,
+      processWriter: WritableStreamDefaultWriter<string>,
+      webcontainerInstance: WebContainer;
 
     (async () => {
       const { Terminal } = await import('@xterm/xterm');
@@ -36,7 +38,7 @@ function XtermWebContainer() {
 
       const unicode11Addon = new Unicode11Addon();
       const fitAddon = new FitAddon();
-    
+
       terminalInstance = new Terminal({
         allowProposedApi: true,
         disableStdin: false,
@@ -57,45 +59,94 @@ function XtermWebContainer() {
 
       terminalInstance.open(terminalContainerRef.current);
       terminalInstance.write('👋 Loading demo.');
-      
+
       const loadingInterval = setInterval(() => {
         terminalInstance.write('.');
       }, 1000);
 
-      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      if (
+        typeof window !== 'undefined' &&
+        window.location.hostname !== 'localhost'
+      ) {
         auth.init({
           clientId: 'wc_api_hobbes7878_7f1676eb6d6a9692c520391c5c3ac744',
           scope: '',
         });
       }
-        
+
       webcontainerInstance = await WebContainer.boot();
-    
+
       const virtualFs = await getVirtualFs();
       await webcontainerInstance.mount(virtualFs);
 
-      await webcontainerInstance.fs.mkdir('src/images/graphics', { recursive: true });
-      await webcontainerInstance.fs.mkdir('src/images/photos', { recursive: true });
+      await webcontainerInstance.fs.mkdir('src/images/graphics', {
+        recursive: true,
+      });
+      await webcontainerInstance.fs.mkdir('src/images/photos', {
+        recursive: true,
+      });
 
       function Uint8ArrayImg(inline: string) {
         const base64 = inline.split(',')[1];
         return Uint8Array.from(window.atob(base64), (v) => v.charCodeAt(0));
       }
 
-      await webcontainerInstance.fs.writeFile('src/images/graphics/fire-xs.png', Uint8ArrayImg(FiresXS));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/fire-sm.png', Uint8ArrayImg(FiresSM));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/fire-md.png', Uint8ArrayImg(FiresMD));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/fire-lg.png', Uint8ArrayImg(FiresLG));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/fire-xl.png', Uint8ArrayImg(FiresXL));
-      await webcontainerInstance.fs.writeFile('src/images/photos/rockets.jpg', Uint8ArrayImg(Rockets));
-      await webcontainerInstance.fs.writeFile('src/images/photos/water.jpg', Uint8ArrayImg(Water));
-      await webcontainerInstance.fs.writeFile('src/images/photos/person.jpg', (await fetchPlaceholderImage(1200, 600)));
-      await webcontainerInstance.fs.writeFile('src/images/photos/landscape.jpg', (await fetchPlaceholderImage(4400, 1200)));
-      await webcontainerInstance.fs.writeFile('src/images/photos/landscape-2.jpg', (await fetchPlaceholderImage(5400, 1600)));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/map-xs.png', (await createImage(400, 500, 'png')));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/map-sm.png', (await createImage(650, 800, 'png')));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/map-md.png', (await createImage(1200, 1800, 'png')));
-      await webcontainerInstance.fs.writeFile('src/images/graphics/map-lg.png', (await createImage(2200, 3200, 'png')));
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/fire-xs.png',
+        Uint8ArrayImg(FiresXS)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/fire-sm.png',
+        Uint8ArrayImg(FiresSM)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/fire-md.png',
+        Uint8ArrayImg(FiresMD)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/fire-lg.png',
+        Uint8ArrayImg(FiresLG)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/fire-xl.png',
+        Uint8ArrayImg(FiresXL)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/photos/rockets.jpg',
+        Uint8ArrayImg(Rockets)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/photos/water.jpg',
+        Uint8ArrayImg(Water)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/photos/person.jpg',
+        await fetchPlaceholderImage(1200, 600)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/photos/landscape.jpg',
+        await fetchPlaceholderImage(4400, 1200)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/photos/landscape-2.jpg',
+        await fetchPlaceholderImage(5400, 1600)
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/map-xs.png',
+        await createImage(400, 500, 'png')
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/map-sm.png',
+        await createImage(650, 800, 'png')
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/map-md.png',
+        await createImage(1200, 1800, 'png')
+      );
+      await webcontainerInstance.fs.writeFile(
+        'src/images/graphics/map-lg.png',
+        await createImage(2200, 3200, 'png')
+      );
 
       const installProc = await webcontainerInstance.spawn('npm', ['install']);
       await installProc.exit;
@@ -107,7 +158,7 @@ function XtermWebContainer() {
       terminalInstance.focus();
 
       const cmdProc = await webcontainerInstance.spawn('node', ['index.js']);
-    
+
       cmdProc.output.pipeTo(
         new WritableStream({
           write(data) {
@@ -115,7 +166,7 @@ function XtermWebContainer() {
           },
         })
       );
-    
+
       processWriter = cmdProc.input.getWriter();
       terminalInstance.onData((data) => {
         processWriter.write(data);
@@ -131,14 +182,8 @@ function XtermWebContainer() {
   }, []);
 
   return (
-    <div
-      className='not-content xterm-wrapper'
-    >
-      <div
-        className="xterm-container"
-        ref={terminalContainerRef}
-      />
-      
+    <div className="not-content xterm-wrapper">
+      <div className="xterm-container" ref={terminalContainerRef} />
     </div>
   );
 }

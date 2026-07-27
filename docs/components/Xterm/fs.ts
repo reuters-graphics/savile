@@ -7,10 +7,10 @@ export const getVirtualFs = async () => {
         contents: JSON.stringify({
           type: 'module',
           dependencies: {
-            "@reuters-graphics/savile": "latest",
-            "@clack/prompts": "latest",
-            "picocolors": "latest"
-          }
+            '@reuters-graphics/savile': 'latest',
+            '@clack/prompts': 'latest',
+            picocolors: 'latest',
+          },
         }),
       },
     },
@@ -34,4 +34,4 @@ export const getVirtualFs = async () => {
       },
     },
   };
-}
+};
