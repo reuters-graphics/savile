@@ -10,7 +10,7 @@ import {
 import { Savile } from '.';
 import mock from 'mock-fs';
 import path from 'path';
-import { confirm, select, text } from '@clack/prompts';
+import { confirm, select, multiselect, text } from '@clack/prompts';
 import * as fs from 'fs';
 import * as url from 'url';
 
@@ -21,6 +21,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
   return {
     ...mod,
     select: vi.fn(),
+    multiselect: vi.fn(),
     text: vi.fn(),
     confirm: vi.fn(),
   };
@@ -134,37 +135,58 @@ describe('Savile', () => {
     expect((await savile.queryImages()).length).toBe(2);
   });
 
-  it('should resize by prompted max width', async () => {
+  it('should select all images', async () => {
     const savile = new Savile('images');
     await savile.findImages();
-    (text as Mock).mockResolvedValueOnce('1999');
-    (confirm as Mock).mockResolvedValueOnce(true);
+    (select as Mock).mockResolvedValueOnce('all');
     // @ts-ignore OK private
-    expect((await savile.resizeByMaxWidth()).length).toBe(3);
-    // @ts-ignore OK private
-    expect(savile.matchImagesByWidth(2000).length).toBe(0);
+    expect((await savile.selectImages()).length).toBe(6);
   });
 
-  it('should resize by prompted query', async () => {
-    const savile = new Savile('images');
-    await savile.findImages();
-    (text as Mock).mockResolvedValueOnce('*.{jpg,jpeg}');
-    (text as Mock).mockResolvedValueOnce('600');
-    (confirm as Mock).mockResolvedValueOnce(true);
-    // @ts-ignore OK private
-    const resized = await savile.resizeByQuery();
-    expect(resized.length).toBe(3);
-    expect(resized.every((i) => i.stats!.width === 600)).toBe(true);
-    // @ts-ignore OK private
-    expect(savile.matchImagesByWidth(2000).length).toBe(0);
-  });
-
-  it('should resize > query', async () => {
+  it('should select images by query', async () => {
     const savile = new Savile('images');
     await savile.findImages();
     (select as Mock).mockResolvedValueOnce('query');
     (text as Mock).mockResolvedValueOnce('*.{jpg,jpeg}');
-    (text as Mock).mockResolvedValueOnce('600');
+    // @ts-ignore OK private
+    expect((await savile.selectImages()).length).toBe(3);
+  });
+
+  it('should select images by max width', async () => {
+    const savile = new Savile('images');
+    await savile.findImages();
+    (select as Mock).mockResolvedValueOnce('width');
+    (text as Mock).mockResolvedValueOnce('1999');
+    // @ts-ignore OK private
+    expect((await savile.selectImages()).length).toBe(3);
+  });
+
+  it('should select images by max file size', async () => {
+    const savile = new Savile('images');
+    await savile.findImages();
+    (select as Mock).mockResolvedValueOnce('size');
+    (text as Mock).mockResolvedValueOnce('500');
+    // @ts-ignore OK private
+    expect((await savile.selectImages()).length).toBe(3);
+  });
+
+  it('should resize all images', async () => {
+    const savile = new Savile('images');
+    await savile.findImages();
+    (select as Mock).mockResolvedValueOnce('all'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('600'); // resize width
+    (confirm as Mock).mockResolvedValueOnce(true);
+    const resized = (await savile.resize())!;
+    expect(resized.length).toBe(6);
+    expect(resized.every((i) => i.stats!.width === 600)).toBe(true);
+  });
+
+  it('should resize images selected by query', async () => {
+    const savile = new Savile('images');
+    await savile.findImages();
+    (select as Mock).mockResolvedValueOnce('query'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('*.{jpg,jpeg}'); // query
+    (text as Mock).mockResolvedValueOnce('600'); // resize width
     (confirm as Mock).mockResolvedValueOnce(true);
     const resized = (await savile.resize())!;
     expect(resized.length).toBe(3);
@@ -173,15 +195,16 @@ describe('Savile', () => {
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
 
-  it('should resize > max', async () => {
+  it('should resize images selected by max width', async () => {
     const savile = new Savile('images');
     await savile.findImages();
-    (select as Mock).mockResolvedValueOnce('max');
-    (text as Mock).mockResolvedValueOnce('1999');
+    (select as Mock).mockResolvedValueOnce('width'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('1999'); // selection threshold
+    (text as Mock).mockResolvedValueOnce('600'); // resize width
     (confirm as Mock).mockResolvedValueOnce(true);
     const resized = (await savile.resize())!;
     expect(resized.length).toBe(3);
-    expect(resized.every((i) => i.stats!.width === 1999)).toBe(true);
+    expect(resized.every((i) => i.stats!.width === 600)).toBe(true);
     // @ts-ignore OK private
     expect(savile.matchImagesByWidth(2000).length).toBe(0);
   });
@@ -192,8 +215,9 @@ describe('Savile', () => {
     // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
-    (text as Mock).mockResolvedValueOnce('thingy-one.jpg');
-    (text as Mock).mockResolvedValueOnce('80');
+    (select as Mock).mockResolvedValueOnce('query'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('thingy-one.jpg'); // query
+    (text as Mock).mockResolvedValueOnce('80'); // optimise quality
     (confirm as Mock).mockResolvedValueOnce(true);
     await savile.optimise();
     // @ts-ignore OK private
@@ -209,8 +233,9 @@ describe('Savile', () => {
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
     expect(ogSize).toBeGreaterThan(0);
-    (text as Mock).mockResolvedValueOnce('thingy-one.jpg');
-    (select as Mock).mockResolvedValueOnce('webp');
+    (select as Mock).mockResolvedValueOnce('query'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('thingy-one.jpg'); // query
+    (select as Mock).mockResolvedValueOnce('webp'); // reformat format
     (confirm as Mock).mockResolvedValueOnce(true);
     await savile.reformat();
     expect(fs.existsSync('images/sub2/thingy-one.jpg')).toBe(false);
@@ -222,36 +247,54 @@ describe('Savile', () => {
     expect(ogSize).toBeGreaterThan(newSize);
   });
 
-  it('should progressivise by query', async () => {
+  it('should progressivise all JPEGs', async () => {
     const savile = new Savile('images');
     await savile.findImages();
     // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
-    (text as Mock).mockResolvedValueOnce('thingy-one.jpg');
+    (select as Mock).mockResolvedValueOnce('all'); // selectImages mode
     (confirm as Mock).mockResolvedValueOnce(true);
-
-    // @ts-ignore OK private
-    await savile.progresiviseByQuery();
-
+    await savile.progressivise();
     // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     expect(ogSize).toBeGreaterThan(newImg.stats!.size);
   });
 
-  it('should progressivise by query', async () => {
+  it('should progressivise images selected by query', async () => {
     const savile = new Savile('images');
     await savile.findImages();
     // @ts-ignore OK private
     const ogImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     const ogSize = ogImg.stats!.size;
+    (select as Mock).mockResolvedValueOnce('query'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('thingy-one.jpg'); // query
     (confirm as Mock).mockResolvedValueOnce(true);
-
-    // @ts-ignore OK private
-    await savile.progresiviseAll();
-
+    await savile.progressivise();
     // @ts-ignore OK private
     const newImg = savile.matchImagesByQuery('thingy-one.jpg')[0];
     expect(ogSize).toBeGreaterThan(newImg.stats!.size);
+  });
+
+  it('should run multiple operations across the same selection in one pass', async () => {
+    const savile = new Savile('images');
+    await savile.findImages();
+
+    // @ts-ignore OK private
+    const ogImages = savile.matchImagesByQuery('*.{jpg,jpeg}');
+    const ogSizes = new Map(ogImages.map((i) => [i.path, i.stats!.size]));
+
+    (select as Mock).mockResolvedValueOnce('query'); // selectImages mode
+    (text as Mock).mockResolvedValueOnce('*.{jpg,jpeg}'); // query
+    (multiselect as Mock).mockResolvedValueOnce(['resize', 'optimise']); // chooseOperations
+    (text as Mock).mockResolvedValueOnce('600'); // resize width
+    (text as Mock).mockResolvedValueOnce('80'); // optimise quality
+    (confirm as Mock).mockResolvedValueOnce(true);
+
+    const acted = (await savile.row())!;
+
+    expect(acted.length).toBe(3);
+    expect(acted.every((i) => i.stats!.width === 600)).toBe(true);
+    expect(acted.every((i) => i.stats!.size < ogSizes.get(i.path)!)).toBe(true);
   });
 }, 10_000);
