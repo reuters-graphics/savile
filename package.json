@@ -37,7 +37,7 @@
   "devDependencies": {
     "@astrojs/react": "^4.2.1",
     "@astrojs/starlight": "^0.32.2",
-    "@astrojs/vercel": "^8.1.2",
+    "@astrojs/vercel": "^9.0.5",
     "@changesets/cli": "^2.27.12",
     "@reuters-graphics/yaks-eslint": "^0.1.0",
     "@reuters-graphics/yaks-prettier": "^0.1.0",
