@@ -28,7 +28,7 @@ interface Stats {
   size: number;
 }
 
-type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif';
+export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif';
 
 export class Image {
   /**

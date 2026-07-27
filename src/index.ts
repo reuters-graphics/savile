@@ -1,8 +1,9 @@
 import { glob } from 'glob';
-import { Image } from './image';
+import { Image, type ImageFormat } from './image';
 import {
   spinner,
   select,
+  multiselect,
   isCancel,
   cancel,
   confirm,
@@ -15,6 +16,19 @@ import { sleep, spinLoop } from './utils';
 import micromatch from 'micromatch';
 import dedent from 'dedent';
 import { note } from './clack';
+
+type Operation =
+  | { kind: 'resize'; width: number }
+  | { kind: 'optimise'; quality: number }
+  | { kind: 'reformat'; format: ImageFormat }
+  | { kind: 'progressive' };
+
+const OPERATION_ORDER: Operation['kind'][] = [
+  'resize',
+  'reformat',
+  'optimise',
+  'progressive',
+];
 
 export class Savile {
   private cwd: string;
@@ -85,7 +99,7 @@ export class Savile {
       🔴 ${colour.bold(colour.red(massiveImages.length))} > 500KB
       🟠 ${largeImages.length} > 350KB
       🟡 ${mediumImages.length} > 250KB
-      
+
       OK:
       🟢 ${colour.cyan(okImages.length)} ≤ 250KB`,
       'Images by file size'
@@ -113,7 +127,7 @@ export class Savile {
       🔴 ${colour.bold(colour.red(massiveImages.length))} > 2400px
       🟠 ${largeImages.length} > 1800px
       🟡 ${mediumImages.length} > 1200px
-      
+
       OK:
       🟢 ${colour.cyan(okImages.length)} ≤ 1200px`,
       'Images by pixel width'
@@ -132,6 +146,12 @@ export class Savile {
     const { images } = this;
     if (!images) throw Error;
     return images.filter((i) => i.stats!.width > width);
+  }
+
+  private matchImagesBySize(size: number) {
+    const { images } = this;
+    if (!images) throw Error;
+    return images.filter((i) => i.stats!.size > size);
   }
 
   private async queryImages() {
@@ -169,62 +189,113 @@ export class Savile {
     return this.matchImagesByQuery(query);
   }
 
-  private async resizeByMaxWidth() {
-    const value = await text({
-      message: "What's the max pixel width you want to resize your images to?",
-      placeholder: '1200',
-      validate: (value: string) => {
-        if (value.length === 0) return 'A value is required';
-        const width = parseInt(value);
-        if (isNaN(width)) return 'Value must be a number';
-        const matchingImages = this.matchImagesByWidth(width);
-        if (matchingImages.length === 0)
-          return `Found no images bigger than ${value}px. Try a different width?`;
-      },
-    });
-
-    if (isCancel(value)) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    const width = parseInt(value);
-    const imagesToResize = this.matchImagesByWidth(width);
-
-    const log = imagesToResize
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.width}px)`)}`)
+  private logSelectedImages(images: Image[]) {
+    const log = images
+      .map(
+        (i) =>
+          `- ${i.relPath} ${colour.dim(`(${i.stats!.width}px, ${i.stats!.size}KB)`)}`
+      )
       .join('\n');
-
-    note(log, `Images > ${width}px`);
-
-    const confirmed = await confirm({
-      message: `Found ${imagesToResize.length} images. Resize them now?`,
-    });
-
-    if (isCancel(confirmed) || !confirmed) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    const loop = spinLoop('Resizing images');
-
-    await loop(imagesToResize, async (image) => {
-      image.resize(width);
-      await image.overwriteImg();
-    });
-
-    return imagesToResize;
+    note(log, `Selected ${images.length} images`);
   }
 
-  private async resizeByQuery() {
-    const imagesToResize = await this.queryImages();
+  /**
+   * Select the set of images to work with, either all of them, by a
+   * glob-style query, by a maximum pixel width, or by a minimum file size.
+   */
+  private async selectImages(): Promise<Image[]> {
+    const { images } = this;
+    if (!images) throw Error;
 
-    const log = imagesToResize
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.width}px)`)}`)
-      .join('\n');
+    if (images.length === 0) {
+      log.info('No images found.');
+      process.exit(0);
+    }
 
-    note(log, `Found ${imagesToResize.length} images`);
+    const mode = await select({
+      message: 'Which images do you want to work with?',
+      options: [
+        {
+          value: 'all',
+          label: 'All images',
+        },
+        {
+          value: 'query',
+          label: 'Query for specific images',
+        },
+        {
+          value: 'width',
+          label: 'Images above a max pixel width',
+        },
+        {
+          value: 'size',
+          label: 'Images above a max file size',
+        },
+      ],
+    });
 
+    if (isCancel(mode)) {
+      cancel('Exiting Savile');
+      process.exit(0);
+    }
+
+    let selected: Image[];
+
+    if (mode === 'all') {
+      selected = images;
+    } else if (mode === 'query') {
+      selected = await this.queryImages();
+    } else if (mode === 'width') {
+      await this.logImageWidth();
+      const value = await text({
+        message: "What's the max pixel width you want to select images above?",
+        placeholder: '1200',
+        validate: (value: string) => {
+          if (value.length === 0) return 'A value is required';
+          const width = parseInt(value);
+          if (isNaN(width)) return 'Value must be a number';
+          const matchingImages = this.matchImagesByWidth(width);
+          if (matchingImages.length === 0)
+            return `Found no images bigger than ${value}px. Try a different width?`;
+        },
+      });
+
+      if (isCancel(value)) {
+        cancel('Exiting Savile');
+        process.exit(0);
+      }
+
+      selected = this.matchImagesByWidth(parseInt(value));
+    } else {
+      await this.logImageFileSize();
+      const value = await text({
+        message:
+          "What's the max file size (in KB) you want to select images above?",
+        placeholder: '250',
+        validate: (value: string) => {
+          if (value.length === 0) return 'A value is required';
+          const size = parseInt(value);
+          if (isNaN(size)) return 'Value must be a number';
+          const matchingImages = this.matchImagesBySize(size);
+          if (matchingImages.length === 0)
+            return `Found no images bigger than ${value}KB. Try a different size?`;
+        },
+      });
+
+      if (isCancel(value)) {
+        cancel('Exiting Savile');
+        process.exit(0);
+      }
+
+      selected = this.matchImagesBySize(parseInt(value));
+    }
+
+    this.logSelectedImages(selected);
+
+    return selected;
+  }
+
+  private async promptResizeWidth(): Promise<number> {
     const value = await text({
       message: "What's the max pixel width you want to resize your images to?",
       placeholder: '1200',
@@ -241,101 +312,10 @@ export class Savile {
       process.exit(0);
     }
 
-    const width = parseInt(value);
-
-    const imagesWiderThanMax = imagesToResize.filter(
-      (i) => i.stats!.width > width
-    );
-
-    const log2 = imagesWiderThanMax
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.width}px)`)}`)
-      .join('\n');
-
-    note(log2, `Wider than ${width}px`);
-
-    const confirmed = await confirm({
-      message: `OK, ${imagesWiderThanMax.length} images are wider than ${width}px. Resize them now?`,
-    });
-
-    if (isCancel(confirmed) || !confirmed) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    const loop = spinLoop('Resizing images');
-    await loop(imagesWiderThanMax, async (image) => {
-      image.resize(width);
-      await image.overwriteImg();
-    });
-
-    return imagesWiderThanMax;
+    return parseInt(value);
   }
 
-  /**
-   * Resize images in your directory.
-   *
-   * ### CLI
-   * ```console
-   * Usage
-   *   $ savile resize <imagesDir> [options]
-   *
-   * Options
-   *   -h, --help    Displays this message
-   *
-   * Examples
-   *   $ savile resize ./src/statics/images
-   * ```
-   */
-  async resize() {
-    await this.logImageWidth();
-
-    const mode = await select({
-      message: 'How do you want to resize your images?',
-      options: [
-        {
-          value: 'max',
-          label: 'Set a max width for all images and resize any above that max',
-        },
-        {
-          value: 'query',
-          label: 'Query for specific images and resize them',
-        },
-      ],
-    });
-
-    if (isCancel(mode)) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    if (mode === 'max') return this.resizeByMaxWidth();
-    if (mode === 'query') return this.resizeByQuery();
-  }
-
-  /**
-   * Optimise images in your directory.
-   *
-   * ### CLI
-   * ```console
-   * Usage
-   *   $ savile optimise <imagesDir> [options]
-   *
-   * Options
-   *   -h, --help    Displays this message
-   *
-   * Examples
-   *   $ savile optimise ./src/statics/images
-   * ```
-   */
-  async optimise() {
-    const imagesToOptimise = await this.queryImages();
-
-    const log = imagesToOptimise
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.size}KB)`)}`)
-      .join('\n');
-
-    note(log, `Found ${imagesToOptimise.length} images`);
-
+  private async promptOptimiseQuality(): Promise<number> {
     const value = await text({
       message:
         'What quality level should we optimise your images to, (lowest) 0 - 100 (highest)?',
@@ -354,47 +334,10 @@ export class Savile {
       process.exit(0);
     }
 
-    const quality = parseInt(value);
-
-    const confirmed = await confirm({
-      message: `OK, we'll optimise these ${imagesToOptimise.length} images to ${quality}% quality. Proceed?`,
-    });
-
-    if (isCancel(confirmed) || !confirmed) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    const loop = spinLoop('Optimising images');
-    await loop(imagesToOptimise, async (image) => {
-      image.optimise(quality);
-      await image.overwriteImg();
-    });
-
-    return imagesToOptimise;
+    return parseInt(value);
   }
 
-  /**
-   * Reformat images in your directory.
-   *
-   * ### CLI
-   * ```console
-   * Usage
-   *   $ savile resize <imagesDir> [options]
-   *
-   * Options
-   *   -h, --help    Displays this message
-   *
-   * Examples
-   *   $ savile row ./src/statics/images
-   * ```
-   */
-  async reformat() {
-    const imagesToReformat = await this.queryImages();
-
-    const log = imagesToReformat.map((i) => `- ${i.relPath}`).join('\n');
-    note(log, `Found ${imagesToReformat.length} images`);
-
+  private async promptReformatFormat(): Promise<ImageFormat> {
     const format = await select({
       message: 'What format do you want to convert these images to?',
       options: [
@@ -418,40 +361,90 @@ export class Savile {
       process.exit(0);
     }
 
-    const confirmed = await confirm({
-      message: `OK, we'll reformat these ${imagesToReformat.length} images to .${format} images. Proceed?`,
+    return format as ImageFormat;
+  }
+
+  /**
+   * Ask which operations to run, in any order, and gather the
+   * parameters each chosen operation needs.
+   */
+  private async chooseOperations(images: Image[]): Promise<Operation[]> {
+    const kinds = await multiselect({
+      message: 'What would you like to do to these images?',
+      options: [
+        {
+          value: 'resize',
+          label: 'Resize',
+        },
+        {
+          value: 'optimise',
+          label: 'Optimise',
+        },
+        {
+          value: 'reformat',
+          label: 'Reformat',
+        },
+        {
+          value: 'progressive',
+          label: 'Convert JPEGs to progressive images',
+        },
+      ],
+      required: true,
     });
 
-    if (isCancel(confirmed) || !confirmed) {
+    if (isCancel(kinds)) {
       cancel('Exiting Savile');
       process.exit(0);
     }
 
-    const loop = spinLoop('Reformatting images');
-    await loop(imagesToReformat, async (image) => {
-      image.reformat(format);
-      await image.overwriteImg();
-    });
+    const chosen = new Set(kinds as Operation['kind'][]);
+    const operations: Operation[] = [];
 
-    return imagesToReformat;
-  }
+    for (const kind of OPERATION_ORDER) {
+      if (!chosen.has(kind)) continue;
 
-  private async progresiviseAll() {
-    const imagesToProgressivise = this.matchImagesByQuery('*.{jpg,jpeg}');
-
-    if (imagesToProgressivise.length === 0) {
-      log.info('No JPEG images found.');
-      return;
+      if (kind === 'resize') {
+        operations.push({ kind, width: await this.promptResizeWidth() });
+      } else if (kind === 'reformat') {
+        operations.push({ kind, format: await this.promptReformatFormat() });
+      } else if (kind === 'optimise') {
+        operations.push({ kind, quality: await this.promptOptimiseQuality() });
+      } else if (kind === 'progressive') {
+        const jpegCount = images.filter((i) => i.type === 'jpeg').length;
+        if (jpegCount === 0) {
+          log.info('None of your selected images are JPEGs — skipping.');
+          continue;
+        }
+        operations.push({ kind });
+      }
     }
 
-    const imgLog = imagesToProgressivise
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.size}KB)`)}`)
+    return operations;
+  }
+
+  private describeOperation(operation: Operation, images: Image[]): string {
+    if (operation.kind === 'resize')
+      return `Resize to max ${operation.width}px`;
+    if (operation.kind === 'optimise')
+      return `Optimise to ${operation.quality}% quality`;
+    if (operation.kind === 'reformat')
+      return `Reformat to .${operation.format}`;
+    const jpegCount = images.filter((i) => i.type === 'jpeg').length;
+    return `Make progressive (${jpegCount} JPEGs affected)`;
+  }
+
+  /**
+   * Show a summary of the pending operations, confirm, then run them
+   * across the selected images in a single pass.
+   */
+  private async confirmAndRun(images: Image[], operations: Operation[]) {
+    const summary = operations
+      .map((op) => `- ${this.describeOperation(op, images)}`)
       .join('\n');
-
-    note(imgLog, `JPEG images`);
+    note(summary, `Planned operations for ${images.length} images`);
 
     const confirmed = await confirm({
-      message: `Found ${imagesToProgressivise.length} JPEG images. Make them progressive now?`,
+      message: 'Proceed?',
     });
 
     if (isCancel(confirmed) || !confirmed) {
@@ -459,82 +452,130 @@ export class Savile {
       process.exit(0);
     }
 
-    const loop = spinLoop('Making progressive JPEGs');
+    const sizeBefore = images.reduce((sum, i) => sum + i.stats!.size, 0);
 
-    await loop(imagesToProgressivise, async (image) => {
-      image.makeProgressive();
-      await image.overwriteImg();
-    });
+    const acted = await this.runOperations(images, operations);
 
-    return imagesToProgressivise;
+    const sizeAfter = acted.reduce((sum, i) => sum + i.stats!.size, 0);
+    this.logRunSummary(sizeBefore, sizeAfter, acted.length);
+
+    return acted;
   }
 
-  private async progresiviseByQuery(): Promise<Image[]> {
-    const imagesToProgressivise = (await this.queryImages()).filter((i) =>
-      micromatch.isMatch(path.basename(i.path), '*.{jpg,jpeg}', {
-        nocase: true,
-      })
+  private logRunSummary(sizeBefore: number, sizeAfter: number, count: number) {
+    const saved = sizeBefore - sizeAfter;
+    const percent =
+      sizeBefore === 0 ? 0 : Math.round((saved / sizeBefore) * 100);
+    const savedLine =
+      saved >= 0 ?
+        `Saved ${colour.green(colour.bold(`${saved}KB`))} (${percent}%)`
+      : `Added ${colour.red(colour.bold(`${Math.abs(saved)}KB`))} (${Math.abs(percent)}%)`;
+
+    note(
+      dedent`${count} images processed
+      ${sizeBefore}KB → ${sizeAfter}KB
+
+      ${savedLine}`,
+      'Summary'
     );
+  }
 
-    if (imagesToProgressivise.length === 0) {
-      log.info('No JPEGs found with your query. Try again?');
-      return this.progresiviseByQuery();
-    }
+  private async runOperations(images: Image[], operations: Operation[]) {
+    const loop = spinLoop('Working on images');
 
-    const imgLog = imagesToProgressivise
-      .map((i) => `- ${i.relPath} ${colour.dim(`(${i.stats!.size}KB)`)}`)
-      .join('\n');
-
-    note(imgLog, `JPEG images`);
-
-    const confirmed = await confirm({
-      message: `Found ${imagesToProgressivise.length} JPEG images. Make them progressive now?`,
-    });
-
-    if (isCancel(confirmed) || !confirmed) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    const loop = spinLoop('Making progressive JPEGs');
-
-    await loop(imagesToProgressivise, async (image) => {
-      image.makeProgressive();
+    await loop(images, async (image) => {
+      for (const operation of operations) {
+        if (operation.kind === 'resize') {
+          image.resize(operation.width);
+        } else if (operation.kind === 'reformat') {
+          image.reformat(operation.format);
+        } else if (operation.kind === 'optimise') {
+          image.optimise(operation.quality);
+        } else if (operation.kind === 'progressive') {
+          image.makeProgressive();
+        }
+      }
       await image.overwriteImg();
     });
 
-    return imagesToProgressivise;
+    return images;
+  }
+
+  /**
+   * Resize images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile resize <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile resize ./src/statics/images
+   * ```
+   */
+  async resize() {
+    const images = await this.selectImages();
+    const width = await this.promptResizeWidth();
+    return this.confirmAndRun(images, [{ kind: 'resize', width }]);
+  }
+
+  /**
+   * Optimise images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile optimise <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile optimise ./src/statics/images
+   * ```
+   */
+  async optimise() {
+    const images = await this.selectImages();
+    const quality = await this.promptOptimiseQuality();
+    return this.confirmAndRun(images, [{ kind: 'optimise', quality }]);
+  }
+
+  /**
+   * Reformat images in your directory.
+   *
+   * ### CLI
+   * ```console
+   * Usage
+   *   $ savile resize <imagesDir> [options]
+   *
+   * Options
+   *   -h, --help    Displays this message
+   *
+   * Examples
+   *   $ savile row ./src/statics/images
+   * ```
+   */
+  async reformat() {
+    const images = await this.selectImages();
+    const format = await this.promptReformatFormat();
+    return this.confirmAndRun(images, [{ kind: 'reformat', format }]);
   }
 
   /**
    * Convert JPEGs files in your directory to progressive images,
    */
   async progressivise() {
-    const mode = await select({
-      message: 'How do you want to select which JPEGs to make progressive',
-      options: [
-        {
-          value: 'all',
-          label: 'Make all my JPEGs progressive',
-        },
-        {
-          value: 'query',
-          label: 'Query for specific JPEGS',
-        },
-      ],
-    });
-
-    if (isCancel(mode)) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    if (mode === 'all') return this.progresiviseAll();
-    if (mode === 'query') return this.progresiviseByQuery();
+    const images = await this.selectImages();
+    return this.confirmAndRun(images, [{ kind: 'progressive' }]);
   }
 
   /**
-   * Resize, optimise or reformat images in your directory.
+   * Resize, optimise, reformat and/or make progressive images in your
+   * directory — select the images once, then choose one or more
+   * operations to run across them in a single pass.
    *
    * ### CLI
    * ```console
@@ -549,38 +590,9 @@ export class Savile {
    * ```
    */
   async row() {
-    this.logImageFileSize();
-
-    const choice = await select({
-      message: 'What would you like to do?',
-      options: [
-        {
-          value: 'resize',
-          label: 'Resize some images',
-        },
-        {
-          value: 'optimise',
-          label: 'Optimise some images',
-        },
-        {
-          value: 'reformat',
-          label: 'Reformat some images',
-        },
-        {
-          value: 'progressive',
-          label: 'Convert JPEGs to progressive images',
-        },
-      ],
-    });
-
-    if (isCancel(choice)) {
-      cancel('Exiting Savile');
-      process.exit(0);
-    }
-
-    if (choice === 'resize') return this.resize();
-    if (choice === 'optimise') return this.optimise();
-    if (choice === 'reformat') return this.reformat();
-    if (choice === 'progressive') return this.progressivise();
+    await this.logImageFileSize();
+    const images = await this.selectImages();
+    const operations = await this.chooseOperations(images);
+    return this.confirmAndRun(images, operations);
   }
 }
