@@ -464,11 +464,12 @@ export class Savile {
 
   private logRunSummary(sizeBefore: number, sizeAfter: number, count: number) {
     const saved = sizeBefore - sizeAfter;
-    const percent = sizeBefore === 0 ? 0 : Math.round((saved / sizeBefore) * 100);
+    const percent =
+      sizeBefore === 0 ? 0 : Math.round((saved / sizeBefore) * 100);
     const savedLine =
-      saved >= 0
-        ? `Saved ${colour.green(colour.bold(`${saved}KB`))} (${percent}%)`
-        : `Added ${colour.red(colour.bold(`${Math.abs(saved)}KB`))} (${Math.abs(percent)}%)`;
+      saved >= 0 ?
+        `Saved ${colour.green(colour.bold(`${saved}KB`))} (${percent}%)`
+      : `Added ${colour.red(colour.bold(`${Math.abs(saved)}KB`))} (${Math.abs(percent)}%)`;
 
     note(
       dedent`${count} images processed
