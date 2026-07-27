@@ -179,3 +179,5 @@ dist
 dist/
 .astro/
 .vercel/
+.vercel
+.env*
