@@ -8,27 +8,20 @@ export const getVirtualFs = async () => {
           type: 'module',
           dependencies: {
             '@reuters-graphics/savile': 'latest',
-            '@clack/prompts': 'latest',
-            picocolors: 'latest',
           },
         }),
       },
     },
     'index.js': {
       file: {
-        contents: dedent`import { Savile } from '@reuters-graphics/savile';
-        import { intro, outro } from '@clack/prompts';
-        import color from 'picocolors';
+        contents: dedent`import { Savile, intro, outro } from '@reuters-graphics/savile';
 
-        // Temporary...
-        process.stdout.write(color.gray('┌') + '  ' + color.bgCyan(' Savile '));
-        console.log('');
+        intro('Savile');
 
         const savile = new Savile('./src/images');
         await savile.findImages();
         await savile.row();
 
-        // Temporary...
         outro('Well done. Suited and booted.');
         `,
       },
