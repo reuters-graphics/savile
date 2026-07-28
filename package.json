@@ -56,7 +56,6 @@
     "@xterm/addon-unicode11": "^0.8.0",
     "@xterm/xterm": "^5.5.0",
     "astro": "^5.5.2",
-    "dedent": "^1.5.3",
     "eslint": "^9.19.0",
     "jimp": "^1.6.0",
     "live-server": "^1.2.2",
@@ -75,6 +74,7 @@
   "dependencies": {
     "@clack/core": "^0.4.1",
     "@clack/prompts": "^0.9.1",
+    "dedent": "^1.5.3",
     "glob": "^11.0.1",
     "image-size": "^1.2.0",
     "is-unicode-supported": "^2.1.0",
