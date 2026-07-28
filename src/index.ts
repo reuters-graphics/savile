@@ -9,13 +9,16 @@ import {
   confirm,
   text,
   log,
+  note,
 } from '@clack/prompts';
 import * as path from 'path';
 import colour from 'picocolors';
 import { sleep, spinLoop } from './utils';
 import micromatch from 'micromatch';
 import dedent from 'dedent';
-import { note } from './clack';
+
+export { intro } from '@reuters-graphics/clack';
+export { outro } from '@clack/prompts';
 
 type Operation =
   | { kind: 'resize'; width: number }
@@ -173,8 +176,8 @@ export class Savile {
     const query = await text({
       message: 'Write a query to match the images you want to work with.',
       placeholder: '*.jpg',
-      validate: (value: string) => {
-        if (value.length === 0) return 'A query is required';
+      validate: (value: string | undefined) => {
+        if (!value) return 'A query is required';
         const matchingImages = this.matchImagesByQuery(value);
         if (matchingImages.length === 0)
           return "Your query didn't match any images. Try another?";
@@ -250,8 +253,8 @@ export class Savile {
       const value = await text({
         message: "What's the max pixel width you want to select images above?",
         placeholder: '1200',
-        validate: (value: string) => {
-          if (value.length === 0) return 'A value is required';
+        validate: (value: string | undefined) => {
+          if (!value) return 'A value is required';
           const width = parseInt(value);
           if (isNaN(width)) return 'Value must be a number';
           const matchingImages = this.matchImagesByWidth(width);
@@ -272,8 +275,8 @@ export class Savile {
         message:
           "What's the max file size (in KB) you want to select images above?",
         placeholder: '250',
-        validate: (value: string) => {
-          if (value.length === 0) return 'A value is required';
+        validate: (value: string | undefined) => {
+          if (!value) return 'A value is required';
           const size = parseInt(value);
           if (isNaN(size)) return 'Value must be a number';
           const matchingImages = this.matchImagesBySize(size);
@@ -299,8 +302,8 @@ export class Savile {
     const value = await text({
       message: "What's the max pixel width you want to resize your images to?",
       placeholder: '1200',
-      validate: (value: string) => {
-        if (value.length === 0) return 'A value is required';
+      validate: (value: string | undefined) => {
+        if (!value) return 'A value is required';
         const width = parseInt(value);
         if (isNaN(width)) return 'Value must be a number';
         if (width <= 0) return 'Width must be greater than 0';
@@ -320,8 +323,8 @@ export class Savile {
       message:
         'What quality level should we optimise your images to, (lowest) 0 - 100 (highest)?',
       placeholder: '85',
-      validate: (value: string) => {
-        if (value.length === 0) return 'A value is required';
+      validate: (value: string | undefined) => {
+        if (!value) return 'A value is required';
         const quality = parseInt(value);
         if (isNaN(quality)) return 'Value must be a number';
         if (quality <= 0 || quality > 100)

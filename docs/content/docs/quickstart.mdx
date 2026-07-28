@@ -10,10 +10,18 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 <Tabs>
   <TabItem label="pnpm" icon="pnpm">
-    ```console pnpm add --save-dev @reuters-graphics/savile ```
+
+```console
+pnpm add --save-dev @reuters-graphics/savile
+```
+
   </TabItem>
   <TabItem label="npm" icon="seti:npm">
-    ```console npm install --save-dev @reuters-graphics/savile ```
+
+```console
+npm install --save-dev @reuters-graphics/savile
+```
+
   </TabItem>
 </Tabs>
 
@@ -23,20 +31,23 @@ Pass a directory where Savile should look for oversize images.
 
 <Tabs>
   <TabItem label="CLI" icon="laptop">
-    ```console
-    savile row ./src/statics/images
-    ```
+
+```console
+savile row ./src/statics/images
+```
+
   </TabItem>
-  <TabItem  label="Module" icon="seti:javascript">
-    ```typescript
-    import { Savile } from '@reuters-graphics/savile';
+  <TabItem label="Module" icon="seti:javascript">
 
-    const savile = new Savile('./src/statics/images');
+```typescript
+import { Savile } from '@reuters-graphics/savile';
 
-    await savile.findImages();
+const savile = new Savile('./src/statics/images');
 
-    await savile.row();
-    ```
+await savile.findImages();
+
+await savile.row();
+```
 
   </TabItem>
 </Tabs>
